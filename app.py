@@ -79,7 +79,7 @@ def ask_and_reply(prompt, message_box):
                             audio_data_stream.save_to_wav_file(unique_file_name)  
                             audio = st.audio(unique_file_name, autoplay=True) 
                             
-                            time.sleep(result.audio_duration.seconds+result.audio_duration.microseconds/1000000)
+                            time.sleep(result.audio_duration.seconds+result.audio_duration.microseconds/1000000+1)
                             audio.empty() 
                             collected_messages.clear()
                             os.remove(unique_file_name)
