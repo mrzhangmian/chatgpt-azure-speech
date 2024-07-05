@@ -27,7 +27,7 @@ speech_config.speech_recognition_language="zh-CN"
 # speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
 
 # The language of the voice that responds on behalf of Azure OpenAI.
-speech_config.speech_synthesis_voice_name='zh-CN-YunhaoNeural'
+speech_config.speech_synthesis_voice_name='zh-CN-YunxiNeural'
 
 pull_stream = speechsdk.audio.PullAudioOutputStream()
 stream_config = speechsdk.audio.AudioOutputConfig(stream=pull_stream)
