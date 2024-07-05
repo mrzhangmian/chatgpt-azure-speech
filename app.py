@@ -78,24 +78,26 @@ def ask_and_reply(prompt, message_box):
     history.append({"role": "assistant", "content": ''.join(collected_messages).strip()})  
     st.session_state.chat_history = history  
   
-def record_voice(file_name):  
+def record_voice(wav_audio_data):  
+
+    file_name = f"input/{str(uuid.uuid4())}.wav"  
+    with open(file_name, "wb") as f:  
+        f.write(wav_audio_data)  
+
     audio_config = speechsdk.AudioConfig(filename=file_name)  
     speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)  
     speech_recognition_result = speech_recognizer.recognize_once_async().get()  
     if speech_recognition_result.reason == speechsdk.ResultReason.RecognizedSpeech:  
         print("Recognized speech: {}".format(speech_recognition_result.text))  
         st.session_state.prompt_text = speech_recognition_result.text  
-        # st.session_state.voice_recognized = True  
+        st.session_state.voice_recognized = True  
     elif speech_recognition_result.reason == speechsdk.ResultReason.NoMatch:  
         print("No speech could be recognized: {}".format(speech_recognition_result.no_match_details))  
-        st.session_state.voice_recognized = False
     elif speech_recognition_result.reason == speechsdk.ResultReason.Canceled:  
         cancellation_details = speech_recognition_result.cancellation_details  
         print("Speech Recognition canceled: {}".format(cancellation_details.reason))  
-        st.session_state.voice_recognized = False
         if cancellation_details.reason == speechsdk.CancellationReason.Error:  
             print("Error details: {}".format(cancellation_details.error_details)) 
-            st.session_state.voice_recognized = False
   
 if "prompt_text" not in st.session_state:  
     st.session_state.prompt_text = None  
@@ -125,11 +127,7 @@ with st.container():
             sample_rate=32000,
         )  
         if wav_audio_data is not None:  
-            st.session_state.voice_recognized = True
-            file_name = f"input/{str(uuid.uuid4())}.wav"  
-            with open(file_name, "wb") as f:  
-                f.write(wav_audio_data)  
-            record_voice(file_name)  
+            record_voice(wav_audio_data)  
   
         message_box = st.empty()  
         if st.session_state.voice_recognized:  
