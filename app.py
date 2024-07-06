@@ -20,29 +20,26 @@ pull_stream = speechsdk.audio.PullAudioOutputStream()
 stream_config = speechsdk.audio.AudioOutputConfig(stream=pull_stream)  
 speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=stream_config)  
   
-tts_sentence_end = [".", "!", "?", ";", "。", "！", "？", "；"]  
+tts_sentence_end = ["!", "?", ";", "。", "！", "？", "；"]  
   
 # 系统提示词，作为对话的上下文  
-system_message = {  
+system_message = [{  
     "role": "system",  
     "content": "你是一个语音助理。APi返回模式设置stream，请确保每次chunk结尾是以下标点 . ! ? ; 。 ！ ？ ；"  
-}  
+} ] 
   
 def ask_and_reply(prompt, message_box):  
     # 将历史对话记录与当前输入合并  
     history = st.session_state.get("chat_history", [])  
-    # 确保系统提示词在对话历史中  
-    if not history or history[0] != system_message:  
-        history.insert(0, system_message)  
     history.append({"role": "user", "content": prompt})  
       
     # 确保历史记录最多包含20条（包含系统提示词）  
     if len(history) > 21:  
         history = history[-21:]  
-      
+    message = system_message + history
     completion = openai.ChatCompletion.create(  
         engine="gpt-4o",  
-        messages=history,  
+        messages=message,  
         temperature=0.7,  
         max_tokens=4096,  
         top_p=0.95,  
@@ -50,9 +47,10 @@ def ask_and_reply(prompt, message_box):
         presence_penalty=0,  
         stream=True  
     )  
-      
-    print("OpenAI Request sent. Now waiting for response...")  
+    # print(message)
+    # print("OpenAI Request sent. Now waiting for response...")  
     collected_messages = []  
+    assistant_messages = []  
     for chunk in completion:  
         if len(chunk.choices) > 0:  
             if "content" in chunk.choices[0].delta:  
@@ -61,9 +59,10 @@ def ask_and_reply(prompt, message_box):
                 if chunk_message and chunk_message[-1] in tts_sentence_end:  
                     text = ''.join(collected_messages).strip()  
                     if text:  
-                        print("Now playing: {}".format(text))  
+                        # print("Now playing: {}".format(text))  
                         message_box.write(f'AI助理: {text}')  
                         result = speech_synthesizer.speak_text(text)  
+                        assistant_messages.append(text)
                         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:  
                             audio_data_stream = speechsdk.AudioDataStream(result)  
                             unique_file_name = f"tempwav/{str(uuid.uuid4())}.wav"  
@@ -75,7 +74,8 @@ def ask_and_reply(prompt, message_box):
                             collected_messages.clear()
       
     # 将 AI 的回复添加到历史记录中  
-    history.append({"role": "assistant", "content": ''.join(collected_messages).strip()})  
+    history.append({"role": "assistant", "content": ''.join(assistant_messages).strip()})  
+    assistant_messages.clear()
     st.session_state.chat_history = history  
   
 def record_voice(wav_audio_data):  
@@ -88,7 +88,7 @@ def record_voice(wav_audio_data):
     speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)  
     speech_recognition_result = speech_recognizer.recognize_once_async().get()  
     if speech_recognition_result.reason == speechsdk.ResultReason.RecognizedSpeech:  
-        print("Recognized speech: {}".format(speech_recognition_result.text))  
+        # print("Recognized speech: {}".format(speech_recognition_result.text))  
         st.session_state.prompt_text = speech_recognition_result.text  
         st.session_state.voice_recognized = True  
     elif speech_recognition_result.reason == speechsdk.ResultReason.NoMatch:  
