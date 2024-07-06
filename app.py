@@ -1,7 +1,6 @@
 import os  
 import time  
 import uuid  
-import wave  
 import azure.cognitiveservices.speech as speechsdk  
 import openai  
 import streamlit as st  
@@ -77,8 +76,29 @@ def ask_and_reply(prompt, message_box):
     history.append({"role": "assistant", "content": ''.join(assistant_messages).strip()})  
     assistant_messages.clear()
     st.session_state.chat_history = history  
+
+def delete_files_older_than_1_minutes(directory):  
+    # 获取当前时间的时间戳  
+    current_time = time.time()  
+    # 计算10分钟前的时间戳  
+    ten_minutes_ago = current_time - 1 * 60  
   
+    # 遍历目录中的所有文件  
+    for filename in os.listdir(directory):  
+        file_path = os.path.join(directory, filename)  
+        # 检查是否为文件  
+        if os.path.isfile(file_path):  
+            # 获取文件的最后修改时间戳  
+            file_mtime = os.path.getmtime(file_path)  
+            # 如果文件的修改时间早于10分钟前，则删除文件  
+            if file_mtime < ten_minutes_ago:  
+                os.remove(file_path)  
+                print(f"Deleted {file_path}")  
+
 def record_voice(wav_audio_data):  
+
+    directory_path = "input"  
+    delete_files_older_than_1_minutes(directory_path)  
 
     file_name = f"input/{str(uuid.uuid4())}.wav"  
     with open(file_name, "wb") as f:  
